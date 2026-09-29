@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DefendPass — Password Strength Analyzer & Security Suggestion Tool</title>
+    <meta name="description" content="A defensive cybersecurity application that evaluates password strength using length, unpredictability, pattern resistance, entropy, and common password analysis locally in-memory.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Background glow shapes -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <header class="navbar" id="mainNavbar">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>DefendPass</h1>
+                    <span class="brand-subtitle">Password Strength Analyzer & Security Suggestion Tool</span>
+                </div>
+            </div>
+            <div class="nav-badges">
+                <span class="badge privacy-badge" title="No passwords or hashes are ever saved or transmitted to external servers">
+                    <i class="fa-solid fa-lock"></i> 100% In-Memory & Local
+                </span>
+                <span class="badge defensive-badge" title="Educational defensive tool adhering to NIST SP 800-63B principles">
+                    <i class="fa-solid fa-user-shield"></i> Defensive Architecture
+                </span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs-nav" id="tabsNav" aria-label="Main Navigation">
+            <button class="tab-btn active" id="tabBtnAnalyzer" data-target="tabAnalyzer">
+                <i class="fa-solid fa-magnifying-glass-chart"></i> Live Analyzer
+            </button>
+            <button class="tab-btn" id="tabBtnPolicy" data-target="tabPolicy">
+                <i class="fa-solid fa-clipboard-check"></i> Policy Compliance
+            </button>
+            <button class="tab-btn" id="tabBtnGenerator" data-target="tabGenerator">
+                <i class="fa-solid fa-key"></i> Key & Passphrase Studio
+            </button>
+            <button class="tab-btn" id="tabBtnDashboard" data-target="tabDashboard">
+                <i class="fa-solid fa-chart-pie"></i> Privacy Analytics
+            </button>
+            <button class="tab-btn" id="tabBtnAwareness" data-target="tabAwareness">
+                <i class="fa-solid fa-graduation-cap"></i> Security Awareness
+            </button>
+            <button class="tab-btn" id="tabBtnHashing" data-target="tabHashing">
+                <i class="fa-solid fa-cubes-stacked"></i> Hashing Lab
+            </button>
+        </nav>
+
+        <!-- Main Content Panes -->
+        <main class="tab-content-wrapper">
+            
+            <!-- TAB 1: LIVE ANALYZER -->
+            <section class="tab-pane active" id="tabAnalyzer">
+                
+                <!-- Quick Demo Synthetic Passwords Bar -->
+                <div class="demo-pills-bar">
+                    <span class="demo-label"><i class="fa-solid fa-flask"></i> Safe Demo Presets:</span>
+                    <button class="demo-chip chip-danger" id="demoChip1" data-val="123456" title="Short, common numeric sequence">123456 (Very Weak)</button>
+                    <button class="demo-chip chip-warning" id="demoChip2" data-val="Password123!" title="Composition rules met, but predictable formula">Password123! (Predictable)</button>
+                    <button class="demo-chip chip-warning" id="demoChip3" data-val="aaaaaaaaaaaaaaaa" title="Long (16 chars) but completely repetitive">aaaaaaaaaaaaaaaa (Repetitive)</button>
+                    <button class="demo-chip chip-warning" id="demoChip4" data-val="qwerty2026!" title="Keyboard walk + Year pattern">qwerty2026! (Keyboard Walk)</button>
+                    <button class="demo-chip chip-success" id="demoChip5" data-val="Orbit-Cobalt-Lantern-Glacier" title="High entropy 4-word passphrase">Passphrase (Strong)</button>
+                    <button class="demo-chip chip-emerald" id="demoChip6" id="btnGenRandomDemo" title="Cryptographically random 20-character password">Random CSPRNG 20</button>
+                </div>
+
+                <!-- Input Card -->
+                <div class="card analyzer-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-terminal"></i> Enter Password to Analyze</h2>
+                        <span class="privacy-note"><i class="fa-solid fa-eye-slash"></i> Passwords are evaluated transiently in memory; never saved.</span>
+                    </div>
+
+                    <div class="password-input-group">
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-fingerprint input-icon"></i>
+                            <input 
+                                type="password" 
+                                id="passwordInput" 
+                                class="main-password-input" 
+                                placeholder="Type or paste a candidate password to inspect..."
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                            <button type="button" class="btn-toggle-eye" id="btnTogglePassword" title="Show or hide password">
+                                <i class="fa-regular fa-eye" id="togglePasswordIcon"></i>
+                            </button>
+                            <button type="button" class="btn-clear-input" id="btnClearPassword" title="Clear input">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Optional Context Accordion -->
+                    <div class="accordion-section" id="contextAccordion">
+                        <button class="accordion-toggle" id="btnToggleContext" type="button">
+                            <span><i class="fa-solid fa-user-tag"></i> Optional Context Check (Personal Information Detection)</span>
+                            <i class="fa-solid fa-chevron-down accordion-arrow" id="contextArrow"></i>
+                        </button>
+                        <div class="accordion-body hidden" id="contextBody">
+                            <p class="context-desc">
+                                Attackers frequently weaponize target personal info (names, birth years, organizations) in custom wordlists.
+                                Enter voluntary synthetic demo values below to check for personal overlap. <em>(Values are never stored or logged)</em>.
+                            </p>
+                            <div class="context-inputs-grid">
+                                <div class="form-group">
+                                    <label for="ctxFirstName"><i class="fa-solid fa-user"></i> First Name:</label>
+                                    <input type="text" id="ctxFirstName" placeholder="e.g., Rahul or Alice">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ctxBirthYear"><i class="fa-solid fa-calendar-days"></i> Birth Year:</label>
+                                    <input type="text" id="ctxBirthYear" placeholder="e.g., 2002">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ctxCompany"><i class="fa-solid fa-building"></i> Company or College:</label>
+                                    <input type="text" id="ctxCompany" placeholder="e.g., Stanford or CyberCorp">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Results Section -->
+                <div class="analysis-results-grid" id="analysisResultsGrid">
+                    
+                    <!-- Primary Strength Gauge & Score Card -->
+                    <div class="card score-hero-card" id="scoreHeroCard">
+                        <div class="score-hero-content">
+                            <div class="score-circular-wrapper">
+                                <div class="score-circle" id="scoreCircle">
+                                    <span class="score-number" id="scoreNumber">0</span>
+                                    <span class="score-max">/ 100</span>
+                                </div>
+                            </div>
+                            <div class="score-text-details">
+                                <div class="classification-tag-wrapper">
+                                    <span class="classification-pill" id="classificationPill">NO INPUT</span>
+                                    <span class="grade-pill" id="gradePill">GRADE: -</span>
+                                </div>
+                                <p class="score-summary-text" id="scoreSummaryText">
+                                    Enter a candidate password above to perform instant defensive inspection across length, randomness, sequences, and pattern resistance.
+                                </p>
+                                <div class="meter-bar-container">
+                                    <div class="meter-bar-fill" id="meterBarFill" style="width: 0%;"></div>
+                                </div>
+                                <div class="meter-bands-legend">
+                                    <span class="band-indicator b-vweak">Very Weak (0-20)</span>
+                                    <span class="band-indicator b-weak">Weak (21-40)</span>
+                                    <span class="band-indicator b-mod">Moderate (41-60)</span>
+                                    <span class="band-indicator b-strong">Strong (61-80)</span>
+                                    <span class="band-indicator b-vstrong">Very Strong (81-100)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Quad Grid -->
+                    <div class="metrics-grid">
+                        
+                        <!-- Length Metric -->
+                        <div class="card metric-card" id="metricLengthCard">
+                            <div class="metric-icon-title">
+                                <i class="fa-solid fa-ruler-horizontal"></i>
+                                <h3>Length Analysis</h3>
+                            </div>
+                            <div class="metric-main-stat">
+                                <span class="metric-big-val" id="valLength">0</span>
+                                <span class="metric-unit">characters</span>
+                            </div>
+                            <div class="metric-band-badge" id="badgeLengthBand">No Input</div>
+                            <p class="metric-caption" id="captionLength">
+                                Length is the primary exponential exponent in brute-force difficulty.
+                            </p>
+                        </div>
+
+                        <!-- Character Diversity Metric -->
+                        <div class="card metric-card" id="metricDiversityCard">
+                            <div class="metric-icon-title">
+                                <i class="fa-solid fa-layer-group"></i>
+                                <h3>Character Diversity</h3>
+                            </div>
+                            <div class="metric-main-stat">
+                                <span class="metric-big-val" id="valDiversityTypes">0 / 4</span>
+                                <span class="metric-unit">classes present</span>
+                            </div>
+                            <div class="char-classes-pills">
+                                <span class="char-pill" id="pillLower"><i class="fa-solid fa-check"></i> Lower (a-z)</span>
+                                <span class="char-pill" id="pillUpper"><i class="fa-solid fa-check"></i> Upper (A-Z)</span>
+                                <span class="char-pill" id="pillDigit"><i class="fa-solid fa-check"></i> Digits (0-9)</span>
+                                <span class="char-pill" id="pillSymbol"><i class="fa-solid fa-check"></i> Symbols</span>
+                            </div>
+                            <p class="metric-caption">
+                                Diversity expands the character set pool ($N$), but alone does not guarantee unpredictability.
+                            </p>
+                        </div>
+
+                        <!-- Variety & Uniqueness Metric -->
+                        <div class="card metric-card" id="metricVarietyCard">
+                            <div class="metric-icon-title">
+                                <i class="fa-solid fa-shapes"></i>
+                                <h3>Character Variety</h3>
+                            </div>
+                            <div class="metric-main-stat">
+                                <span class="metric-big-val" id="valUniqueCount">0</span>
+                                <span class="metric-unit">unique chars (<span id="valUniqueRatio">0%</span>)</span>
+                            </div>
+                            <div class="variety-progress-track">
+                                <div class="variety-progress-fill" id="varietyProgressFill" style="width: 0%;"></div>
+                            </div>
+                            <p class="metric-caption">
+                                Low unique-character ratios indicate excessive repetition or predictable clustering.
+                            </p>
+                        </div>
+
+                        <!-- Entropy Estimation Metric -->
+                        <div class="card metric-card" id="metricEntropyCard">
+                            <div class="metric-icon-title">
+                                <i class="fa-solid fa-bolt"></i>
+                                <h3>Entropy Estimate</h3>
+                            </div>
+                            <div class="metric-main-stat">
+                                <span class="metric-big-val" id="valEffectiveBits">0.0</span>
+                                <span class="metric-unit">effective bits</span>
+                            </div>
+                            <div class="entropy-substats">
+                                <span>Pool size (N): <strong id="valPoolSize">0</strong></span>
+                                <span>Theoretical: <strong id="valTheoreticalBits">0.0</strong> bits</span>
+                            </div>
+                            <p class="metric-caption caution-text">
+                                <i class="fa-solid fa-circle-info"></i> Raw theoretical entropy overestimates human passwords. Effective entropy penalizes structural patterns.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Findings & Weaknesses Card -->
+                    <div class="card findings-card" id="findingsCard">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-triangle-exclamation"></i> Identified Patterns & Weaknesses</h2>
+                            <span class="findings-count-badge" id="findingsCountBadge">0 Detected</span>
+                        </div>
+                        <div class="findings-list" id="findingsList">
+                            <div class="empty-state-notice">
+                                <i class="fa-solid fa-shield-cat"></i>
+                                <p>No weaknesses detected or no candidate password entered yet.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Suggestions & Remediations Card -->
+                    <div class="card suggestions-card" id="suggestionsCard">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-lightbulb"></i> Actionable Security Suggestions</h2>
+                            <span class="defensive-tag">Defensive Guidance</span>
+                        </div>
+                        
+                        <div class="suggestions-content" id="suggestionsContent">
+                            <div class="passphrase-callout hidden" id="passphraseCallout">
+                                <div class="callout-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                <div class="callout-text">
+                                    <h4>Passphrase Recommendation:</h4>
+                                    <p id="passphraseTipText"></p>
+                                </div>
+                            </div>
+
+                            <div class="suggestions-section">
+                                <h4><i class="fa-solid fa-arrow-trend-up"></i> Priority Fixes:</h4>
+                                <ul class="suggestions-list" id="immediateActionsList">
+                                    <li>Enter a password to generate customized defensive recommendations.</li>
+                                </ul>
+                            </div>
+
+                            <div class="suggestions-section">
+                                <h4><i class="fa-solid fa-shield-virus"></i> Universal Password Hygiene:</h4>
+                                <ul class="suggestions-list" id="hygieneList">
+                                    <li>Store credentials in a dedicated, audited Password Manager.</li>
+                                    <li>Enable Multi-Factor Authentication (MFA) across all services.</li>
+                                    <li>Never reuse passwords across distinct web accounts.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- TAB 2: POLICY COMPLIANCE -->
+            <section class="tab-pane" id="tabPolicy">
+                <div class="card policy-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-clipboard-check"></i> Enterprise Password Policy Evaluation</h2>
+                        <span class="policy-status-tag" id="policyStatusTag">Awaiting Evaluation</span>
+                    </div>
+
+                    <div class="policy-intro">
+                        <p>
+                            Evaluates candidate passwords against contemporary enterprise standards inspired by 
+                            <strong>NIST SP 800-63B (Digital Identity Guidelines)</strong>.
+                        </p>
+                    </div>
+
+                    <div class="policy-rules-grid" id="policyRulesList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <div class="card educational-contrast-box">
+                        <div class="box-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="box-content">
+                            <h3>Critical Cybersecurity Concept: Compliance vs. True Strength</h3>
+                            <p>
+                                A password can be <strong>100% compliant</strong> with legacy enterprise rules (e.g., <code>Password123!</code> has upper, lower, number, and symbol) while remaining trivial to guess.
+                                Conversely, a 24-character random passphrase composed entirely of lowercase words (<code>correct-horse-battery-staple</code>) may fail rigid legacy complexity rules while providing immense cryptographic brute-force resistance. Modern standards mandate length and breach screening over arbitrary complexity rules.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: KEY & PASSPHRASE STUDIO -->
+            <section class="tab-pane" id="tabGenerator">
+                <div class="generator-dual-grid">
+                    
+                    <!-- Sub-Card 1: Cryptographic Random Password Generator -->
+                    <div class="card gen-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-dice"></i> CSPRNG Password Generator</h2>
+                            <span class="badge csprng-badge"><i class="fa-solid fa-microchip"></i> Python secrets module</span>
+                        </div>
+                        <p class="gen-subtitle">
+                            Uses true OS-level entropy (CryptGenRandom/BCryptGenRandom). Never uses predictable pseudo-random generators (such as standard MT19937).
+                        </p>
+
+                        <div class="gen-output-box">
+                            <input type="text" id="genPwdOutput" readonly placeholder="Click 'Generate Password' below...">
+                            <button type="button" class="btn-copy" id="btnCopyGenPwd" title="Copy to clipboard">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+
+                        <div class="gen-controls">
+                            <div class="form-range-group">
+                                <div class="range-header">
+                                    <label for="pwdLengthRange">Length:</label>
+                                    <span class="range-val" id="pwdLengthVal">16</span>
+                                </div>
+                                <input type="range" id="pwdLengthRange" min="8" max="32" value="16" step="1">
+                            </div>
+
+                            <div class="checkbox-grid">
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="chkUpper" checked>
+                                    <span>Uppercase (A-Z)</span>
+                                </label>
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="chkLower" checked>
+                                    <span>Lowercase (a-z)</span>
+                                </label>
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="chkDigits" checked>
+                                    <span>Numbers (0-9)</span>
+                                </label>
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="chkSymbols" checked>
+                                    <span>Symbols (!@#$...)</span>
+                                </label>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn-primary" id="btnGeneratePassword">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Generate Password
+                                </button>
+                                <button type="button" class="btn-secondary" id="btnTestGenerated">
+                                    <i class="fa-solid fa-vial"></i> Send to Analyzer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Card 2: Memorable Passphrase Generator -->
+                    <div class="card gen-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-book-bookmark"></i> Memorable Passphrase Studio</h2>
+                            <span class="badge eff-badge"><i class="fa-solid fa-feather-pointed"></i> EFF / Diceware Style</span>
+                        </div>
+                        <p class="gen-subtitle">
+                            Generates memorable, multi-word passphrases with vast combinatorial keyspaces that humans can recall without insecure written notes.
+                        </p>
+
+                        <div class="gen-output-box">
+                            <input type="text" id="genPassphraseOutput" readonly placeholder="Click 'Generate Passphrase' below...">
+                            <button type="button" class="btn-copy" id="btnCopyGenPassphrase" title="Copy to clipboard">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+
+                        <div class="gen-controls">
+                            <div class="form-range-group">
+                                <div class="range-header">
+                                    <label for="phraseWordRange">Word Count:</label>
+                                    <span class="range-val" id="phraseWordVal">4 words</span>
+                                </div>
+                                <input type="range" id="phraseWordRange" min="3" max="6" value="4" step="1">
+                            </div>
+
+                            <div class="form-select-group">
+                                <label for="phraseSeparator">Word Separator:</label>
+                                <select id="phraseSeparator">
+                                    <option value="-">Hyphen (-)</option>
+                                    <option value=".">Period (.)</option>
+                                    <option value="_">Underscore (_)</option>
+                                    <option value=" ">Space ( )</option>
+                                </select>
+                            </div>
+
+                            <div class="checkbox-grid">
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" id="chkCapitalize" checked>
+                                    <span>Capitalize Each Word</span>
+                                </label>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn-primary" id="btnGeneratePassphrase">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Generate Passphrase
+                                </button>
+                                <button type="button" class="btn-secondary" id="btnTestPassphrase">
+                                    <i class="fa-solid fa-vial"></i> Send to Analyzer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- TAB 4: PRIVACY ANALYTICS DASHBOARD -->
+            <section class="tab-pane" id="tabDashboard">
+                
+                <!-- Privacy Guarantee Banner -->
+                <div class="card privacy-banner">
+                    <div class="banner-icon"><i class="fa-solid fa-shield-cat"></i></div>
+                    <div class="banner-body">
+                        <h3>Zero-Credential Storage Guarantee</h3>
+                        <p>
+                            This dashboard queries <code>analytics.db</code>, which contains <strong>ONLY safe mathematical aggregates</strong> 
+                            (score, length, uniqueness ratio, weakness categories). There is <strong>no password column</strong>, 
+                            no hash column, and no user identifier anywhere in the database schema.
+                        </p>
+                    </div>
+                    <button class="btn-refresh" id="btnRefreshDashboard" title="Refresh analytics telemetry">
+                        <i class="fa-solid fa-rotate"></i> Refresh Data
+                    </button>
+                </div>
+
+                <!-- Aggregates Stat Cards -->
+                <div class="stats-counter-grid">
+                    <div class="card stat-counter-card">
+                        <div class="stat-icon"><i class="fa-solid fa-vial-virus"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-number" id="dashTotalAnalyses">0</span>
+                            <span class="stat-label">Total Analyses Run</span>
+                        </div>
+                    </div>
+                    <div class="card stat-counter-card">
+                        <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-number" id="dashAvgScore">0.0</span>
+                            <span class="stat-label">Average Strength Score</span>
+                        </div>
+                    </div>
+                    <div class="card stat-counter-card">
+                        <div class="stat-icon"><i class="fa-solid fa-arrows-left-right"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-number" id="dashAvgLength">0.0</span>
+                            <span class="stat-label">Average Length (chars)</span>
+                        </div>
+                    </div>
+                    <div class="card stat-counter-card">
+                        <div class="stat-icon"><i class="fa-solid fa-atom"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-number" id="dashAvgEntropy">0.0</span>
+                            <span class="stat-label">Average Entropy (bits)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Dual Layout -->
+                <div class="dashboard-charts-grid">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Strength Classification Breakdown</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartClassifications"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-simple"></i> Score Distribution (20-Point Bins)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartScores"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-bug"></i> Most Frequently Detected Weakness Types</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartWeaknesses"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-line"></i> Password Length Distribution</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chartLengths"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- TAB 5: SECURITY AWARENESS & EDUCATION -->
+            <section class="tab-pane" id="tabAwareness">
+                
+                <!-- 10 Rules Section -->
+                <div class="card awareness-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-list-check"></i> The 10 Golden Rules of Modern Password Security</h2>
+                        <span class="defensive-tag">Defensive Cybersecurity</span>
+                    </div>
+
+                    <div class="rules-timeline">
+                        <div class="rule-item">
+                            <div class="rule-num">1</div>
+                            <div class="rule-content">
+                                <h3>Enforce Credential Uniqueness</h3>
+                                <p>Never reuse passwords across distinct applications. If a breach occurs at an obscure web forum, attackers will immediately attempt those credentials against banking and email portals via automated <strong>Credential Stuffing</strong>.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">2</div>
+                            <div class="rule-content">
+                                <h3>Prioritize Length Over Complexity</h3>
+                                <p>Brute-force difficulty scales exponentially with length ($N^L$). A 16-character phrase composed of common words is exponentially more difficult to crack than an 8-character string filled with complex symbols.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">3</div>
+                            <div class="rule-content">
+                                <h3>Eliminate Predictable Personal Context</h3>
+                                <p>Avoid names, pet names, birthdays, graduation years, or favorite sports teams. Attackers build custom wordlists (e.g. using tools like CeWL or CUPP) harvested directly from public social media profiles.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">4</div>
+                            <div class="rule-content">
+                                <h3>Avoid Common Wordlist Patterns</h3>
+                                <p>Passwords like <code>password123</code>, <code>welcome2026</code>, or <code>admin!</code> are checked in the initial milliseconds of an attack. Mask and hybrid attacks systematically append digits and symbols to common nouns.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">5</div>
+                            <div class="rule-content">
+                                <h3>Adopt a Dedicated Password Manager</h3>
+                                <p>Humans are inherently poor random number generators. A vetted password manager (e.g., Bitwarden, 1Password, KeePassXC) generates, stores, and autofills unique 20+ character passwords for every single service.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">6</div>
+                            <div class="rule-content">
+                                <h3>Enable Multi-Factor Authentication (MFA / 2FA)</h3>
+                                <p>Even if an attacker captures or cracks your master password, MFA requires a second possession/inherence factor (Authenticator TOTP, FIDO2 WebAuthn key). Modern MFA blocks over 99% of bulk credential attacks.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">7</div>
+                            <div class="rule-content">
+                                <h3>Never Disclose Credentials</h3>
+                                <p>No legitimate system administrator or IT helpdesk agent will ever ask for your password. Beware of phone pretexting and urgency-driven social engineering campaigns.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">8</div>
+                            <div class="rule-content">
+                                <h3>Stay Vigilant Against Adversary-in-the-Middle (AiTM) Phishing</h3>
+                                <p>Reverse proxy phishing frameworks (like Evilginx) can intercept passwords and session cookies in real time. Prefer phishing-resistant hardware keys (FIDO2 / Passkeys) over SMS codes.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">9</div>
+                            <div class="rule-content">
+                                <h3>Abandon Frustrating Arbitrary Expirations</h3>
+                                <p>Modern NIST guidelines advise against forced 90-day password changes unless a compromise is suspected. Frequent forced resets cause users to simply increment digits (e.g. <code>Spring2025!</code> to <code>Summer2025!</code>).</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <div class="rule-num">10</div>
+                            <div class="rule-content">
+                                <h3>Rotate Credentials Immediately Upon Confirmed Compromise</h3>
+                                <p>Monitor data breach notification services (like Have I Been Pwned). If a service you use suffers a verified breach, immediately update the credential and revoke active session tokens.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Defense in Depth Login Security Card -->
+                <div class="card awareness-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-dungeon"></i> Real-World Login Security: Defense in Depth</h2>
+                        <span class="defensive-tag">Architectural Security</span>
+                    </div>
+
+                    <p class="awareness-intro">
+                        A strong password is only one layer of an authentication ecosystem. Enterprise security architectures 
+                        implement multi-layered defensive controls:
+                    </p>
+
+                    <div class="defense-pillars-grid">
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-fingerprint"></i>
+                            <h4>Multi-Factor Authentication</h4>
+                            <p>Enforces out-of-band verification via TOTP or FIDO2/WebAuthn hardware tokens.</p>
+                        </div>
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-traffic-light"></i>
+                            <h4>Adaptive Rate Limiting</h4>
+                            <p>Restricts login velocity (e.g. 5 attempts per minute per IP) to mitigate automated spraying.</p>
+                        </div>
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-user-lock"></i>
+                            <h4>Account Lockout & CAPTCHA</h4>
+                            <p>Temporarily locks target accounts or invokes proof-of-work CAPTCHAs during anomaly bursts.</p>
+                        </div>
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-database"></i>
+                            <h4>Memory-Hard Hashing</h4>
+                            <p>Stores credentials using Argon2id or scrypt with high work factors and per-user cryptographic salts.</p>
+                        </div>
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-cookie-bite"></i>
+                            <h4>Secure Session Handling</h4>
+                            <p>Uses <code>HttpOnly</code>, <code>Secure</code>, and <code>SameSite=Strict</code> cookie attributes with rapid TTLs.</p>
+                        </div>
+                        <div class="pillar-box">
+                            <i class="fa-solid fa-network-wired"></i>
+                            <h4>SOC & SIEM Telemetry</h4>
+                            <p>Streams authentication logs into SIEM rules to detect impossible travel and spraying patterns.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- TAB 6: CRYPTOGRAPHIC HASHING LAB -->
+            <section class="tab-pane" id="tabHashing">
+                <div class="card hashing-lab-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-cubes-stacked"></i> Password Hashing & Key Stretching Educational Lab</h2>
+                        <span class="badge lab-badge">Defense Engineering</span>
+                    </div>
+
+                    <div class="hashing-workflow-banner">
+                        <div class="h-step">
+                            <span class="h-num">1</span>
+                            <span class="h-title">Plaintext Password</span>
+                            <span class="h-desc">User input (transient)</span>
+                        </div>
+                        <div class="h-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="h-step">
+                            <span class="h-num">2</span>
+                            <span class="h-title">Cryptographic Salt</span>
+                            <span class="h-desc">Unique 16-byte CSPRNG nonce</span>
+                        </div>
+                        <div class="h-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="h-step">
+                            <span class="h-num">3</span>
+                            <span class="h-title">Key Stretching Function</span>
+                            <span class="h-desc">Argon2id / scrypt / PBKDF2</span>
+                        </div>
+                        <div class="h-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                        <div class="h-step">
+                            <span class="h-num">4</span>
+                            <span class="h-title">Stored Hash Digest</span>
+                            <span class="h-desc">Irreversible verification record</span>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Table -->
+                    <div class="hash-table-wrapper">
+                        <h3>Cryptographic Algorithm Suitability Matrix</h3>
+                        <table class="hash-table">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Category</th>
+                                    <th>Memory-Hard?</th>
+                                    <th>Recommended for Passwords?</th>
+                                    <th>Security Rationale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="row-danger">
+                                    <td><strong>MD5 / SHA-1</strong></td>
+                                    <td>Fast Hash</td>
+                                    <td>No</td>
+                                    <td><span class="tag-no">STRICTLY FORBIDDEN</span></td>
+                                    <td>Cryptographically broken; collisions proven; computed at 50+ billion/sec on GPUs.</td>
+                                </tr>
+                                <tr class="row-danger">
+                                    <td><strong>SHA-256 / SHA-512</strong></td>
+                                    <td>Fast Hash</td>
+                                    <td>No</td>
+                                    <td><span class="tag-no">INSECURE ALONE</span></td>
+                                    <td>Designed for high-throughput checksums, not password storage. Vulnerable to ASIC brute force.</td>
+                                </tr>
+                                <tr class="row-good">
+                                    <td><strong>PBKDF2-HMAC-SHA256</strong></td>
+                                    <td>Key Derivation</td>
+                                    <td>No (CPU-hard)</td>
+                                    <td><span class="tag-yes">ACCEPTABLE (600k+ iter)</span></td>
+                                    <td>NIST approved; requires massive iteration counts to withstand modern GPU speedups.</td>
+                                </tr>
+                                <tr class="row-great">
+                                    <td><strong>bcrypt</strong></td>
+                                    <td>Adaptive Function</td>
+                                    <td>Partial</td>
+                                    <td><span class="tag-yes">EXCELLENT</span></td>
+                                    <td>Proven track record; Eksblowfish key schedule consumes memory to hinder GPU parallelism.</td>
+                                </tr>
+                                <tr class="row-best">
+                                    <td><strong>Argon2id / scrypt</strong></td>
+                                    <td>Memory-Hard Function</td>
+                                    <td>Yes (Strict)</td>
+                                    <td><span class="tag-yes">GOLD STANDARD</span></td>
+                                    <td>Password Hashing Competition winner; consumes configurable RAM (e.g. 64MB) to defeat ASIC/GPU attacks.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="educational-callout">
+                        <h4><i class="fa-solid fa-code"></i> Run the Standalone Terminal Hashing Lab</h4>
+                        <p>
+                            An educational Python script demonstrating salted PBKDF2-HMAC-SHA256 and scrypt hashing with constant-time verification 
+                            is included in this repository. Run it anytime in your terminal:
+                        </p>
+                        <div class="code-snippet-box">
+                            <code>python backend/utils/hashing_demo.py</code>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-left">
+                <span>DefendPass — Cybersecurity Course Project</span>
+                <span class="footer-separator">•</span>
+                <span>Defensive Architecture & Privacy-By-Design</span>
+            </div>
+            <div class="footer-right">
+                <span>Built for Academic & Interview Demonstration</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Toast Element -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
