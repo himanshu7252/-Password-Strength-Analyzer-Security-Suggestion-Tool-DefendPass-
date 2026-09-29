@@ -1,0 +1,8 @@
+# Password Strength Analyzer & Security Suggestion Tool
+# Core Dependencies
+Flask>=3.0.0
+flask-cors>=4.0.0
+pytest>=8.0.0
+
+# Optional cryptographic utilities
+cryptography>=42.0.0
